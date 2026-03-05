@@ -1,13 +1,14 @@
 {
   "homepage": "https://instantwhip03-tech.github.io/inventory-destruction-logger",
-  "name": "ice-cream-distributors-dc",
+  "name": "inventory-destruction-logger",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "dev": "vite --host",
     "build": "vite build",
-"start": "echo 'GitHub Pages is static only - no server needed'",
-"preview": "vite preview --host --outDir dist/public",
+    "start": "echo 'GitHub Pages is static only - no server needed'",
+    "preview": "vite preview --host --outDir dist/public",
     "check": "tsc --noEmit",
     "format": "prettier --write ."
   },
@@ -90,11 +91,8 @@
   },
   "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af",
   "pnpm": {
-  "overrides": {
-    "tailwindcss>nanoid": "3.3.7"
-  }
-}
-
+    "overrides": {
+      "tailwindcss>nanoid": "3.3.7"
     }
   }
 }
