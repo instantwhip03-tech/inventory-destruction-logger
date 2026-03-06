@@ -1,5 +1,8 @@
 {
   "buildCommand": "pnpm build",
-  "installCommand": "pnpm install",
-  "framework": "vite"
+  "installCommand": "corepack enable && corepack prepare pnpm@10.15.1 --activate && pnpm install --no-frozen-lockfile",
+  "framework": "vite",
+  "env": {
+    "PNPM_REGISTRY": "https://registry.npmjs.org/"
+  }
 }
