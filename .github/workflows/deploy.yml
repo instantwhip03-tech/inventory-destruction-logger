@@ -10,6 +10,8 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      PNPM_REGISTRY: https://registry.npmjs.org/
 
     steps:
       - uses: actions/checkout@v4
@@ -17,14 +19,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: "10.4.1"
+      - name: Enable Corepack + pin pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.15.1 --activate
+          pnpm -v
+          pnpm config set registry $PNPM_REGISTRY
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - name: Install
+        run: |
+          pnpm install --no-frozen-lockfile --reporter=append-only
+
+      - name: Build
+        run: pnpm build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
