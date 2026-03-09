@@ -1,0 +1,8 @@
+{
+  "name": "Inventory Dump Log",
+  "description": "QR code scanning inventory destruction logger with Google Sheets integration",
+  "type": "web-static",
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "outputDir": "dist/public"
+}
