@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, QrCode, Trash2, Clock, CheckCircle, Loader2 } from "lucide-react";
+import { AlertCircle, QrCode, Trash2, Clock, CheckCircle, Loader2, Search } from "lucide-react";
 
 // Google Apps Script deployment URL
 const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJQgz9cSiEszPrys-EyMX8offgJDk18tDNeorwjbDGhdViirn8jo_sXJnztwED6eaT/exec";
@@ -29,7 +29,9 @@ interface DestructionLog {
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("scanner");
+  const [activeTab, setActiveTab] = useState("browse");
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [scannedQRCode, setScannedQRCode] = useState("");
   const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null);
   const [quantityInput, setQuantityInput] = useState("");
@@ -110,6 +112,30 @@ export default function Home() {
     }
   };
 
+  // Get unique categories from inventory items
+  const getCategories = () => {
+    const categories = new Set(inventoryItems.map(item => item.category).filter(Boolean));
+    return Array.from(categories).sort();
+  };
+
+  // Filter inventory items by category and search query
+  const getFilteredItems = () => {
+    let filtered = inventoryItems;
+    
+    if (activeCategory !== "all") {
+      filtered = filtered.filter(item => item.category === activeCategory);
+    }
+    
+    if (searchQuery) {
+      filtered = filtered.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  };
+
   // Initialize camera for QR code scanning
   const startCamera = async () => {
     try {
@@ -147,6 +173,14 @@ export default function Home() {
       setShowError(true);
       setTimeout(() => setShowError(false), 3000);
     }
+  };
+
+  // Select item from browse list
+  const handleSelectItem = (item: InventoryItem) => {
+    setSelectedInventory(item);
+    setScannedQRCode(item.id);
+    setQuantityInput("");
+    setActiveTab("log");
   };
 
   // Submit destruction log to Google Sheet
@@ -218,6 +252,9 @@ export default function Home() {
     }
   };
 
+  const categories = getCategories();
+  const filteredItems = getFilteredItems();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-red-100">
       {/* Header */}
@@ -229,112 +266,143 @@ export default function Home() {
             </div>
             <h1 className="text-3xl font-bold text-slate-900">Inventory Dump Log</h1>
           </div>
-          <p className="text-slate-600">Scan QR codes and log inventory dumps to Google Sheets with automatic timestamps</p>
+          <p className="text-slate-600">Scan QR codes or browse items and log inventory dumps to Google Sheets</p>
         </div>
       </header>
+
+      {/* Success/Error Messages */}
+      {showSuccess && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 z-40">
+          <CheckCircle className="w-5 h-5" />
+          Destruction logged successfully!
+        </div>
+      )}
+
+      {showError && (
+        <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 z-40">
+          <AlertCircle className="w-5 h-5" />
+          {errorMessage}
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="container py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="scanner">QR Scanner</TabsTrigger>
+            <TabsTrigger value="browse">Browse Items</TabsTrigger>
             <TabsTrigger value="log" disabled={!selectedInventory}>
               Log Dump
             </TabsTrigger>
             <TabsTrigger value="history">Dump History</TabsTrigger>
           </TabsList>
 
-          {/* QR Scanner Tab */}
-          <TabsContent value="scanner" className="space-y-6">
+          {/* Browse Items Tab */}
+          <TabsContent value="browse" className="space-y-6">
+            {/* Search Bar */}
             <Card className="border-red-200 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <QrCode className="w-5 h-5 text-red-600" />
-                  Scan QR Code
+                  <Search className="w-5 h-5 text-red-600" />
+                  Search Items
                 </CardTitle>
-                <CardDescription>Point your device camera at the QR code on the inventory item</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {!cameraActive ? (
-                  <Button onClick={startCamera} className="w-full bg-red-600 hover:bg-red-700">
-                    Start Camera
-                  </Button>
-                ) : (
-                  <>
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full rounded-lg border-2 border-red-300"
-                    />
-                    <Button onClick={stopCamera} variant="outline" className="w-full">
-                      Stop Camera
-                    </Button>
-                  </>
-                )}
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-slate-500">Or manually enter Product ID (Demo):</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="e.g., INV-001"
-                    value={scannedQRCode}
-                    onChange={(e) => setScannedQRCode(e.target.value)}
-                    className="border-red-200"
-                  />
-                  <Button
-                    onClick={() => simulateQRScan(scannedQRCode)}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Scan
-                  </Button>
-                </div>
+              <CardContent>
+                <Input
+                  placeholder="Search by product name or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
               </CardContent>
             </Card>
 
-            {/* Available Inventory Items */}
+            {/* Category Tabs */}
+            {categories.length > 0 && (
+              <Card className="border-red-200 shadow-md">
+                <CardHeader>
+                  <CardTitle>Categories</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-6 gap-3">
+                    <button
+                      onClick={() => setActiveCategory("all")}
+                      className={`aspect-square flex flex-col items-center justify-center rounded-lg font-bold text-sm transition-all ${
+                        activeCategory === "all"
+                          ? "bg-red-600 text-white shadow-md"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      <span className="text-lg">All</span>
+                      <span className="text-xs mt-1">({inventoryItems.length})</span>
+                    </button>
+                    {categories.map((category) => {
+                      const count = inventoryItems.filter(item => item.category === category).length;
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => setActiveCategory(category)}
+                          className={`aspect-square flex flex-col items-center justify-center rounded-lg font-bold text-sm transition-all ${
+                            activeCategory === category
+                              ? "bg-red-600 text-white shadow-md"
+                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          }`}
+                        >
+                          <span className="text-lg">{category}</span>
+                          <span className="text-xs mt-1">({count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Inventory Items List */}
             <Card className="border-red-200 shadow-md">
               <CardHeader>
-                <CardTitle>Available Inventory Items</CardTitle>
+                <CardTitle>
+                  {activeCategory === "all" ? "All Items" : `${activeCategory} Items`}
+                </CardTitle>
                 <CardDescription>
-                  {isLoadingInventory ? "Loading from Google Sheet..." : `${inventoryItems.length} items available`}
+                  {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} found
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingInventory ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-red-600 mr-2" />
-                    <span>Loading inventory...</span>
+                    <Loader2 className="w-6 h-6 text-red-600 animate-spin" />
+                    <span className="ml-2 text-slate-600">Loading inventory...</span>
                   </div>
-                ) : inventoryItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <AlertCircle className="w-12 h-12 text-red-400 mb-3" />
-                    <p className="text-slate-600">No inventory items found. Please contact your administrator.</p>
+                ) : filteredItems.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                    No items found. Try adjusting your search or category.
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {inventoryItems.map((item) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredItems.map((item) => (
                       <div
                         key={item.id}
-                        onClick={() => simulateQRScan(item.id)}
-                        className="p-3 border border-red-200 rounded-lg hover:bg-red-50 cursor-pointer transition-colors"
+                        className="p-4 border border-red-200 rounded-lg hover:bg-red-50 cursor-pointer transition-colors"
+                        onClick={() => handleSelectItem(item)}
                       >
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
                             <p className="font-semibold text-slate-900">{item.name}</p>
                             <p className="text-sm text-slate-600">ID: {item.id}</p>
                           </div>
-                          <Badge variant="outline" className="ml-2">
-                            {item.unit}
-                          </Badge>
+                          <Badge className="bg-red-100 text-red-800">{item.category}</Badge>
                         </div>
+                        <p className="text-sm text-slate-500">Unit: {item.unit}</p>
+                        <Button
+                          size="sm"
+                          className="mt-3 w-full bg-red-600 hover:bg-red-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectItem(item);
+                          }}
+                        >
+                          Select Item
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -346,81 +414,100 @@ export default function Home() {
           {/* Log Dump Tab */}
           <TabsContent value="log" className="space-y-6">
             {selectedInventory && (
-              <Card className="border-red-200 shadow-md bg-red-50/50">
-                <CardHeader>
-                  <CardTitle className="text-red-900">Log Destruction</CardTitle>
-                  <CardDescription>
-                    Selected: <span className="font-semibold">{selectedInventory.name}</span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Quantity to Destroy
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Enter quantity"
-                      value={quantityInput}
-                      onChange={(e) => setQuantityInput(e.target.value)}
-                      className="border-red-200"
-                    />
-                  </div>
+              <>
+                <Card className="border-red-200 shadow-md bg-red-50">
+                  <CardHeader>
+                    <CardTitle>Selected Item</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p><strong>Product ID:</strong> {selectedInventory.id}</p>
+                      <p><strong>Name:</strong> {selectedInventory.name}</p>
+                      <p><strong>Unit:</strong> {selectedInventory.unit}</p>
+                      <p><strong>Category:</strong> <Badge>{selectedInventory.category}</Badge></p>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Unit: {selectedInventory.unit}
-                    </label>
-                  </div>
+                <Card className="border-red-200 shadow-md">
+                  <CardHeader>
+                    <CardTitle>Log Destruction</CardTitle>
+                    <CardDescription>Enter the details of the inventory destruction</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Quantity to Destroy
+                      </label>
+                      <Input
+                        type="number"
+                        placeholder="Enter quantity"
+                        value={quantityInput}
+                        onChange={(e) => setQuantityInput(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Employee Name
-                    </label>
-                    <Input
-                      placeholder="Enter your name"
-                      value={employeeName}
-                      onChange={(e) => setEmployeeName(e.target.value)}
-                      className="border-red-200"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Employee Name
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Enter your name"
+                        value={employeeName}
+                        onChange={(e) => setEmployeeName(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Reason for Destruction
-                    </label>
-                    <select
-                      value={reasonInput}
-                      onChange={(e) => setReasonInput(e.target.value)}
-                      className="w-full px-3 py-2 border border-red-200 rounded-md"
-                    >
-                      <option value="DAMAGED">Damaged</option>
-                      <option value="EXPIRED">Expired</option>
-                      <option value="RECALL">Recall</option>
-                      <option value="WASTE">Waste</option>
-                      <option value="OTHER">Other</option>
-                    </select>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Reason for Destruction
+                      </label>
+                      <select
+                        value={reasonInput}
+                        onChange={(e) => setReasonInput(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                      >
+                        <option>DAMAGED</option>
+                        <option>EXPIRED</option>
+                        <option>RECALL</option>
+                        <option>QUALITY_ISSUE</option>
+                        <option>OTHER</option>
+                      </select>
+                    </div>
 
-                  <Button
-                    onClick={handleSubmitDestruction}
-                    disabled={isSubmitting}
-                    className="w-full bg-red-600 hover:bg-red-700"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Submit to Google Sheet
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
+                    <div className="flex gap-3 pt-4">
+                      <Button
+                        onClick={handleSubmitDestruction}
+                        disabled={isSubmitting}
+                        className="flex-1 bg-red-600 hover:bg-red-700"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          "Submit to Google Sheet"
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedInventory(null);
+                          setQuantityInput("");
+                          setScannedQRCode("");
+                          setActiveTab("browse");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             )}
           </TabsContent>
 
@@ -433,34 +520,41 @@ export default function Home() {
                   Destruction History
                 </CardTitle>
                 <CardDescription>
-                  {destructionLogs.length} destruction entries logged
+                  {destructionLogs.length} destruction{destructionLogs.length !== 1 ? "s" : ""} logged
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {destructionLogs.length === 0 ? (
-                  <p className="text-slate-600 text-center py-8">No destruction logs yet</p>
+                  <div className="text-center py-8 text-slate-500">
+                    No destructions logged yet.
+                  </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="space-y-4">
                     {destructionLogs.map((log) => (
                       <div
                         key={log.id}
-                        className="p-3 border border-red-200 rounded-lg bg-red-50/50"
+                        className="p-4 border border-red-200 rounded-lg"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <p className="font-semibold text-slate-900">{log.inventoryName}</p>
-                            <p className="text-sm text-slate-600">{log.timestamp}</p>
+                            <p className="text-sm text-slate-600">ID: {log.inventoryId}</p>
                           </div>
                           <Badge
-                            variant={log.googleSheetStatus === "success" ? "default" : "destructive"}
+                            className={
+                              log.googleSheetStatus === "success"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }
                           >
-                            {log.googleSheetStatus === "success" ? "✓ Saved" : "✗ Error"}
+                            {log.googleSheetStatus === "success" ? "Saved" : "Error"}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
-                          <div>Quantity: {log.quantity} {log.unit}</div>
-                          <div>Employee: {log.employeeName}</div>
-                          <div>Reason: {log.reason}</div>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-slate-600 mb-2">
+                          <p><strong>Quantity:</strong> {log.quantity} {log.unit}</p>
+                          <p><strong>Employee:</strong> {log.employeeName}</p>
+                          <p><strong>Reason:</strong> {log.reason}</p>
+                          <p><strong>Time:</strong> {log.timestamp}</p>
                         </div>
                       </div>
                     ))}
@@ -470,23 +564,60 @@ export default function Home() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* QR Scanner Section - Moved to Bottom */}
+        <div className="mt-12">
+          <Card className="border-red-200 shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-red-600" />
+                QR Code Scanner
+              </CardTitle>
+              <CardDescription>Alternatively, scan a QR code to quickly select an item</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!cameraActive ? (
+                <Button onClick={startCamera} className="w-full bg-red-600 hover:bg-red-700">
+                  Start Camera
+                </Button>
+              ) : (
+                <>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full rounded-lg border-2 border-red-300"
+                  />
+                  <Button onClick={stopCamera} variant="outline" className="w-full">
+                    Stop Camera
+                  </Button>
+                </>
+              )}
+
+              <div className="border-t border-red-200 pt-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Or manually enter Product ID:
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Enter Product ID"
+                    value={scannedQRCode}
+                    onChange={(e) => setScannedQRCode(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={() => simulateQRScan(scannedQRCode)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </main>
-
-      {/* Success Toast */}
-      {showSuccess && (
-        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
-          <CheckCircle className="w-5 h-5" />
-          Destruction logged successfully!
-        </div>
-      )}
-
-      {/* Error Toast */}
-      {showError && (
-        <div className="fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 max-w-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
     </div>
   );
 }
