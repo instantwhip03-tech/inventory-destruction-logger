@@ -79,7 +79,10 @@ export default function Home() {
       );
       
       // Race between the fetch and timeout
-      const fetchPromise = fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getInventory");
+      const fetchPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'getInventory' })
+      });
       const response = await Promise.race([fetchPromise, timeoutPromise]);
       
       if (!response.ok) {
