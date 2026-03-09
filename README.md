@@ -1,82 +1,59 @@
 # Inventory Dump Log
 
-A web application for scanning QR codes and logging inventory destructions to Google Sheets with automatic timestamps.
+A web application for logging destroyed inventory items with QR code scanning and Google Sheets integration.
 
 ## Features
 
-- **QR Code Scanning**: Scan QR codes or manually enter Product IDs
-- **Destruction Logging**: Log inventory dumps with quantity, employee name, and reason
-- **Google Sheets Integration**: Automatically saves all entries to Google Sheets
-- **Dump History**: Track all destruction entries with timestamps
-- **981 Inventory Items**: Real-time data from Google Sheet
+- **QR Code Scanning**: Quickly scan product QR codes to log inventory destruction
+- **Manual Entry**: Enter product IDs manually if QR codes are unavailable
+- **Category Filtering**: Browse items by 26 different categories (United, Maola, Frozen, etc.)
+- **Search Functionality**: Find items by name or product ID
+- **Google Sheets Integration**: All destruction logs are automatically saved to Google Sheets
+- **Automated Email Summaries**: Daily summaries at 6 PM and monthly reports with PDF attachments
+- **Responsive Design**: Works on desktop and mobile devices
 
-## Setup
+## Technology Stack
 
-### Prerequisites
-- Node.js 22.13.0
-- pnpm package manager
-- Google Apps Script deployment URL
+- React 18 with TypeScript
+- Vite for fast development and building
+- Tailwind CSS for styling
+- Radix UI for accessible components
+- @zxing/library for QR code scanning
+- Google Apps Script for backend integration
 
-### Installation
+## Getting Started
+
+### Development
 
 ```bash
-cd /home/ubuntu/inventory-destruction-logger
 pnpm install
-pnpm dev --port 3003
+pnpm dev
 ```
 
-The app will be available at `http://localhost:3003`
+The app will be available at `http://localhost:5173`
 
-## Google Apps Script Integration
+### Production Build
 
-The app uses a Google Apps Script API to:
-- Fetch inventory items from the Product Inventory sheet
-- Log destruction entries to monthly sheets
-- Send daily and monthly email summaries
-
-**Deployment URL**: https://script.google.com/macros/s/AKfycbzJQgz9cSiEszPrys-EyMX8offgJDk18tDNeorwjbDGhdViirn8jo_sXJnztwED6eaT/exec
-
-## Project Structure
-
-```
-client/
-  src/
-    pages/Home.tsx          - Main app component
-    components/             - Reusable UI components
-    index.css              - Global styles
-  public/                  - Static files
-package.json              - Dependencies
+```bash
+pnpm build
 ```
 
-## Recovery Instructions
+The built files will be in the `dist/public` directory.
 
-If the app needs to be recovered:
+## Google Sheets Setup
 
-1. **Check git history**:
-   ```bash
-   cd /home/ubuntu/inventory-destruction-logger
-   git log --oneline
-   ```
+The app integrates with Google Sheets using the following:
+- **Sheet ID**: 1a3blj44GREZyPm9hnTxuOkzL5hJj3at2a6gHBEERdok
+- **Google Apps Script Endpoint**: https://script.google.com/macros/s/AKfycbw6dOUyDuyAUfMq98E4hCtAXYN5eiVS3luCAP54wbvDZHDkUShcWQIKN7ZbuS2bH7XntA/exec
 
-2. **Restore from a commit**:
-   ```bash
-   git reset --hard <commit-hash>
-   ```
+## Features
 
-3. **Reinstall dependencies**:
-   ```bash
-   pnpm install
-   ```
+- Fetches inventory data from Google Sheets
+- Logs destruction events with timestamps
+- Creates monthly sheets for organization
+- Sends daily email summaries at 6 PM
+- Sends monthly email summaries with PDF attachments
 
-4. **Start the dev server**:
-   ```bash
-   pnpm dev --port 3003
-   ```
+## License
 
-## Git Commits
-
-- `2e523743` - Initial commit: Inventory Dump Log with 981 items from Google Sheet
-
-## Support
-
-For issues or questions, contact the development team.
+MIT

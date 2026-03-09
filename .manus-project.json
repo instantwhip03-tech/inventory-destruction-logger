@@ -1,0 +1,9 @@
+{
+  "name": "inventory-dump-log",
+  "description": "Inventory Destruction Logger - QR code scanning and Google Sheets integration",
+  "type": "web-static",
+  "framework": "react",
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "outputDir": "dist"
+}

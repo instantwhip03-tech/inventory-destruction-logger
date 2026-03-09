@@ -1,0 +1,11 @@
+{
+  "projectName": "inventory-dump-log",
+  "projectTitle": "Inventory Dump Log",
+  "projectDescription": "QR code scanning inventory destruction logger with Google Sheets integration",
+  "projectType": "web-static",
+  "framework": "react",
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "outputDir": "dist/public",
+  "port": 5173
+}
