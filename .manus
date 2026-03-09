@@ -1,0 +1,8 @@
+{
+  "projectName": "Inventory Dump Log",
+  "projectType": "web-static",
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "outputDir": "dist/public",
+  "framework": "react"
+}
