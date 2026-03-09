@@ -323,17 +323,17 @@ export default function Home() {
                   <CardTitle>Categories</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-6 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
                     <button
                       onClick={() => setActiveCategory("all")}
-                      className={`aspect-square flex flex-col items-center justify-center rounded-lg font-bold text-sm transition-all ${
+                      className={`aspect-square flex flex-col items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition-all p-1 ${
                         activeCategory === "all"
                           ? "bg-red-600 text-white shadow-md"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
-                      <span className="text-lg">All</span>
-                      <span className="text-xs mt-1">({inventoryItems.length})</span>
+                      <span className="text-base sm:text-lg">All</span>
+                      <span className="text-[10px] sm:text-xs mt-0.5">({inventoryItems.length})</span>
                     </button>
                     {categories.map((category) => {
                       const count = inventoryItems.filter(item => item.category === category).length;
@@ -341,14 +341,14 @@ export default function Home() {
                         <button
                           key={category}
                           onClick={() => setActiveCategory(category)}
-                          className={`aspect-square flex flex-col items-center justify-center rounded-lg font-bold text-sm transition-all ${
+                          className={`aspect-square flex flex-col items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition-all p-1 ${
                             activeCategory === category
                               ? "bg-red-600 text-white shadow-md"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                           }`}
                         >
-                          <span className="text-lg">{category}</span>
-                          <span className="text-xs mt-1">({count})</span>
+                          <span className="text-base sm:text-lg line-clamp-1">{category}</span>
+                          <span className="text-[10px] sm:text-xs mt-0.5">({count})</span>
                         </button>
                       );
                     })}
