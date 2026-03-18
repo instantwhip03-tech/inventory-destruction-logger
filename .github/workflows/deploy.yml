@@ -2,39 +2,34 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ master ]
-
-permissions:
-  contents: write
+    branches: [ master, main ]
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    env:
-      PNPM_REGISTRY: https://registry.npmjs.org/
     
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Enable Corepack + pin pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.15.1 --activate
-      
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-      
-      - name: Install
-        run: |
-          pnpm install --no-frozen-lockfile --reporter=append-only
-      
-      - name: Build
-        run: pnpm build
-      
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist/public
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 10.15.1
+    
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+    
+    - name: Build
+      run: pnpm build
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
