@@ -29,7 +29,11 @@ jobs:
       run: pnpm build
     
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
+      run: |
+        rm -rf docs
+        cp -r dist docs
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git add docs/
+        git commit -m "Deploy: Update docs folder with latest build" || true
+        git push origin master
