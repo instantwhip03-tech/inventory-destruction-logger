@@ -214,6 +214,7 @@ export default function Home() {
       // Send to Google Apps Script
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: "POST",
+        mode: 'no-cors',
         body: JSON.stringify(logData),
         headers: {
           'Content-Type': 'application/json'
