@@ -36,3 +36,13 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./dist
         cname: false
+    
+    - name: Deploy redirect index.html
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git checkout gh-pages
+        cp redirect-index.html index.html
+        git add index.html
+        git commit -m "Add redirect index.html to root" || true
+        git push origin gh-pages
