@@ -2,12 +2,14 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ master, main ]
-  workflow_dispatch:
+    branches:
+      - master
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - uses: actions/checkout@v4
@@ -20,28 +22,17 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
-        version: 10.15.1
+        version: 8
     
     - name: Install dependencies
-      run: pnpm install --no-frozen-lockfile
+      run: pnpm install
     
     - name: Build
       run: pnpm build
     
     - name: Deploy to GitHub Pages
-      run: |
-        # Remove old build files but keep source files
-        find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -delete
-        rm -rf assets __manus__
-        
-        # Copy new build files to root
-        cp dist/index.html .
-        cp -r dist/assets .
-        cp -r dist/__manus__ . 2>/dev/null || true
-        
-        # Commit and push
-        git config --global user.email "github-actions@github.com"
-        git config --global user.name "GitHub Actions"
-        git add index.html assets/ __manus__/ 2>/dev/null || true
-        git commit -m "Deploy: Update build files" || true
-        git push origin master
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        cname: false
