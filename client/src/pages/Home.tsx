@@ -245,6 +245,11 @@ export default function Home() {
       setScannedQRCode("");
       setReasonInput("DAMAGED");
 
+      // Switch back to browse tab after 1 second
+      setTimeout(() => {
+        setActiveTab("browse");
+      }, 1000);
+
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       console.error("Error submitting to Google Sheet:", error);
