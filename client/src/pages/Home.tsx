@@ -69,6 +69,11 @@ export default function Home() {
     return () => clearInterval(refreshInterval);
   }, []);
 
+  // Scroll to top when category changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeCategory]);
+
   const fetchInventoryItems = async () => {
     try {
       setIsLoadingInventory(true);
