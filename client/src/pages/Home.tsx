@@ -325,8 +325,8 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Category Tabs */}
-            {categories.length > 0 && (
+            {/* Category Tabs - Hide when specific category is selected */}
+            {categories.length > 0 && activeCategory === "all" && (
               <Card className="border-red-200 shadow-md">
                 <CardHeader>
                   <CardTitle>Categories</CardTitle>
@@ -364,6 +364,21 @@ export default function Home() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Clear Filter Button - Show when category is selected */}
+            {activeCategory !== "all" && (
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-900">{activeCategory} Items</h3>
+                <Button
+                  onClick={() => setActiveCategory("all")}
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  Clear Filter
+                </Button>
+              </div>
             )}
 
             {/* Inventory Items List */}
