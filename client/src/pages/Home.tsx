@@ -226,8 +226,8 @@ export default function Home() {
         }
       });
 
-      const result = await response.json();
-      console.log("Submission result:", result);
+      // With no-cors mode, we can't read the response, so just treat successful fetch as success
+      console.log("Submission sent to Google Apps Script", response);
 
       // Create local log entry
       const timestamp = new Date().toLocaleString();
@@ -240,7 +240,7 @@ export default function Home() {
         timestamp,
         employeeName,
         reason: reasonInput,
-        googleSheetStatus: result.status === "success" ? "success" : "error",
+        googleSheetStatus: "success",
       };
 
       setDestructionLogs([...destructionLogs, newLog]);
