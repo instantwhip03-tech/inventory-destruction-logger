@@ -245,18 +245,19 @@ export default function Home() {
 
       setDestructionLogs([...destructionLogs, newLog]);
       setShowSuccess(true);
+      
+      // Immediately reset state to return to main page
       setSelectedInventory(null);
       setQuantityInput("");
       setScannedQRCode("");
       setReasonInput("DAMAGED");
       setActiveCategory("all"); // Reset to show all categories
-
-      // Switch back to browse tab and scroll to top after 1 second
-      setTimeout(() => {
-        setActiveTab("browse");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 1000);
-
+      setActiveTab("browse"); // Switch to browse tab immediately
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Hide success message after 3 seconds
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       console.error("Error submitting to Google Sheet:", error);
