@@ -246,21 +246,29 @@ export default function Home() {
       setDestructionLogs([...destructionLogs, newLog]);
       setShowSuccess(true);
       
-      // Immediately reset state to return to main page
+      // Switch to browse tab FIRST (before clearing selectedInventory)
+      setActiveTab("browse");
+      
+      // Then reset state to return to main page
       setSelectedInventory(null);
       setQuantityInput("");
       setScannedQRCode("");
       setReasonInput("DAMAGED");
       setActiveCategory("all"); // Reset to show all categories
-      setActiveTab("browse"); // Switch to browse tab immediately
       
       // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
       
       // Hide success message after 3 seconds
       setTimeout(() => setShowSuccess(false), 3000);
+      
+      console.log("Submission complete - should be on browse tab now");
     } catch (error) {
       console.error("Error submitting to Google Sheet:", error);
+      console.log("Current activeTab:", activeTab);
+      console.log("Current selectedInventory:", selectedInventory);
       setErrorMessage("Error saving to Google Sheet. Please try again.");
       setShowError(true);
       setTimeout(() => setShowError(false), 3000);
