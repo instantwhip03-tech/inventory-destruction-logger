@@ -249,10 +249,12 @@ export default function Home() {
       setQuantityInput("");
       setScannedQRCode("");
       setReasonInput("DAMAGED");
+      setActiveCategory("all"); // Reset to show all categories
 
-      // Switch back to browse tab after 1 second
+      // Switch back to browse tab and scroll to top after 1 second
       setTimeout(() => {
         setActiveTab("browse");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 1000);
 
       setTimeout(() => setShowSuccess(false), 3000);
