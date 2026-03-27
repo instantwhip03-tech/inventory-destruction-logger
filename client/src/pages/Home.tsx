@@ -14,6 +14,7 @@ interface InventoryItem {
   name: string;
   unit: string;
   category: string;
+  price?: number;
 }
 
 interface DestructionLog {
@@ -46,6 +47,7 @@ export default function Home() {
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [supervisorApproved, setSupervisorApproved] = useState(false);
 
   // Fallback test data
   const testData: InventoryItem[] = [
@@ -103,7 +105,8 @@ export default function Home() {
           id: String(item.productId || item.id || ""),
           name: String(item.description || item.name || ""),
           unit: String(item.uom || item.unit || ""),
-          category: String(item.category || "")
+          category: String(item.category || ""),
+          price: parseFloat(item.dollarValue || 0)
         }));
         setInventoryItems(items);
         console.log("Loaded " + items.length + " inventory items from API");
@@ -254,6 +257,7 @@ export default function Home() {
       setQuantityInput("");
       setScannedQRCode("");
       setReasonInput("DAMAGED");
+      setSupervisorApproved(false); // Reset supervisor approval
       setActiveCategory("all"); // Reset to show all categories
       
       // Scroll to top
@@ -518,10 +522,35 @@ export default function Home() {
                       </select>
                     </div>
 
+                    {/* Total Value Display */}
+                    {selectedInventory.price && quantityInput && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-slate-600">
+                          Total Value: <strong className="text-blue-600">${(parseFloat(quantityInput) * selectedInventory.price).toFixed(2)}</strong>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Supervisor Approval for items over $30 */}
+                    {selectedInventory.price && quantityInput && (parseFloat(quantityInput) * selectedInventory.price) > 30 && (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg space-y-3">
+                        <p className="text-sm text-red-600 font-semibold">⚠️ Value exceeds $30 - Supervisor approval required</p>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={supervisorApproved}
+                            onChange={(e) => setSupervisorApproved(e.target.checked)}
+                            className="w-4 h-4 text-yellow-600 rounded"
+                          />
+                          <span className="text-sm text-slate-700">I have supervisor approval for this destruction</span>
+                        </label>
+                      </div>
+                    )}
+
                     <div className="flex gap-3 pt-4">
                       <Button
                         onClick={handleSubmitDestruction}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || (selectedInventory.price && quantityInput && (parseFloat(quantityInput) * selectedInventory.price) > 30 && !supervisorApproved)}
                         className="flex-1 bg-red-600 hover:bg-red-700"
                       >
                         {isSubmitting ? (
@@ -539,6 +568,7 @@ export default function Home() {
                           setSelectedInventory(null);
                           setQuantityInput("");
                           setScannedQRCode("");
+                          setSupervisorApproved(false);
                           setActiveTab("browse");
                         }}
                       >
