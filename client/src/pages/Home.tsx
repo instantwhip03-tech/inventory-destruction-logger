@@ -79,10 +79,11 @@ export default function Home() {
   const fetchInventoryItems = async () => {
     try {
       setIsLoadingInventory(true);
+      console.log("Starting inventory fetch from:", GOOGLE_APPS_SCRIPT_URL);
       
-      // Create a timeout promise that rejects after 5 seconds
+      // Create a timeout promise that rejects after 10 seconds
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('API timeout')), 5000)
+        setTimeout(() => reject(new Error('API timeout after 10 seconds')), 10000)
       );
       
       // Race between the fetch and timeout
@@ -90,14 +91,30 @@ export default function Home() {
         method: 'POST',
         body: JSON.stringify({ action: 'getInventory' })
       });
+      
+      console.log("Fetch promise created, waiting for response...");
       const response = await Promise.race([fetchPromise, timeoutPromise]);
       
+      console.log("Response received:", response.status, response.statusText);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Response not OK. Status:", response.status, "Text:", errorText);
         throw new Error(`Failed to fetch inventory: ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log("API Response:", data);
+      const responseText = await response.text();
+      console.log("Raw response text:", responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", parseError);
+        throw new Error("Invalid JSON response from API");
+      }
+      
+      console.log("Parsed API Response:", data);
       
       if (data.status === "success" && data.items && data.items.length > 0) {
         // Convert the items from the API response
@@ -113,12 +130,14 @@ export default function Home() {
         });
         console.log("Mapped items:", items);
         setInventoryItems(items);
-        console.log("Loaded " + items.length + " inventory items from API");
+        console.log("SUCCESS: Loaded " + items.length + " inventory items from API");
       } else {
+        console.error("API response missing items or status not success:", data);
         throw new Error(data.message || "No inventory items found in Google Sheet.");
       }
     } catch (error) {
       console.error("Error fetching inventory:", error);
+      console.error("Error details:", error instanceof Error ? error.message : String(error));
       // Use fallback test data
       setInventoryItems(testData);
       console.log("Using fallback test data - API may be unavailable");
