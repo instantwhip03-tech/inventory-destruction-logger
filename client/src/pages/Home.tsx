@@ -51,11 +51,11 @@ export default function Home() {
 
   // Fallback test data
   const testData: InventoryItem[] = [
-    { id: "INV-001", name: "Vanilla Ice Cream", unit: "Liter", category: "United" },
-    { id: "INV-002", name: "Chocolate Ice Cream", unit: "Liter", category: "Maola" },
-    { id: "INV-003", name: "Strawberry Ice Cream", unit: "Liter", category: "Other" },
-    { id: "INV-004", name: "Mint Chip Ice Cream", unit: "Liter", category: "United" },
-    { id: "INV-005", name: "Cookie Dough Ice Cream", unit: "Liter", category: "Maola" }
+    { id: "INV-001", name: "Vanilla Ice Cream", unit: "Liter", category: "United", price: 5.99 },
+    { id: "INV-002", name: "Chocolate Ice Cream", unit: "Liter", category: "Maola", price: 6.99 },
+    { id: "INV-003", name: "Strawberry Ice Cream", unit: "Liter", category: "Other", price: 5.99 },
+    { id: "INV-004", name: "Mint Chip Ice Cream", unit: "Liter", category: "United", price: 7.99 },
+    { id: "INV-005", name: "Cookie Dough Ice Cream", unit: "Liter", category: "Maola", price: 8.99 }
   ];
 
   // Fetch inventory items from Google Sheet on component mount and set up auto-refresh
@@ -101,13 +101,17 @@ export default function Home() {
       
       if (data.status === "success" && data.items && data.items.length > 0) {
         // Convert the items from the API response
-        const items: InventoryItem[] = data.items.map((item: any) => ({
-          id: String(item.productId || item.id || ""),
-          name: String(item.description || item.name || ""),
-          unit: String(item.uom || item.unit || ""),
-          category: String(item.category || ""),
-          price: parseFloat(item.dollarValue || 0)
-        }));
+        const items: InventoryItem[] = data.items.map((item: any) => {
+          console.log("Item from API:", item);
+          return {
+            id: String(item.productId || item.id || ""),
+            name: String(item.description || item.name || ""),
+            unit: String(item.uom || item.unit || ""),
+            category: String(item.category || ""),
+            price: item.dollarValue ? parseFloat(item.dollarValue) : 0
+          };
+        });
+        console.log("Mapped items:", items);
         setInventoryItems(items);
         console.log("Loaded " + items.length + " inventory items from API");
       } else {
