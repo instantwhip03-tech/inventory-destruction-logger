@@ -120,12 +120,20 @@ export default function Home() {
         // Convert the items from the API response
         const items: InventoryItem[] = data.items.map((item: any) => {
           console.log("Item from API:", item);
+          // Parse price - check for undefined/null, not just falsy (0 is valid)
+          let price = 0;
+          if (item.dollarValue !== undefined && item.dollarValue !== null) {
+            price = parseFloat(item.dollarValue);
+            if (isNaN(price)) {
+              price = 0;
+            }
+          }
           return {
             id: String(item.productId || item.id || ""),
             name: String(item.description || item.name || ""),
             unit: String(item.uom || item.unit || ""),
             category: String(item.category || ""),
-            price: item.dollarValue ? parseFloat(item.dollarValue) : 0
+            price: price
           };
         });
         console.log("Mapped items:", items);
