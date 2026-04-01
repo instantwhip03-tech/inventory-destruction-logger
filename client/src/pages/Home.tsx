@@ -460,6 +460,9 @@ export default function Home() {
                           <Badge className="bg-red-100 text-red-800">{item.category}</Badge>
                         </div>
                         <p className="text-sm text-slate-500">Unit: {item.unit}</p>
+                        {item.price !== undefined && item.price > 0 && (
+                          <p className="text-sm text-green-600 font-semibold">Price: ${item.price.toFixed(2)}</p>
+                        )}
                         <Button
                           size="sm"
                           className="mt-3 w-full bg-red-600 hover:bg-red-700"
@@ -492,6 +495,9 @@ export default function Home() {
                       <p><strong>Name:</strong> {selectedInventory.name}</p>
                       <p><strong>Unit:</strong> {selectedInventory.unit}</p>
                       <p><strong>Category:</strong> <Badge>{selectedInventory.category}</Badge></p>
+                      {selectedInventory.price !== undefined && (
+                        <p><strong>Unit Price:</strong> ${selectedInventory.price.toFixed(2)}</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
