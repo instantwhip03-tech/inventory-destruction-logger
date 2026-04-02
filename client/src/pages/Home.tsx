@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, QrCode, Trash2, Clock, CheckCircle, Loader2 } from "lucide-react";
 
 // Google Apps Script deployment URL
-const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8ydmlnboa55kPP6ovp4Q_kIa2M7F1uYA8BG_JUng/dev";
+const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz862mUtIjcQoIskNFFxsKyiqAJTN-M6oIXZ1CaQfh7y0cXzD5h7jAZi3SvWWDfJrXN/exec";
 
 interface InventoryItem {
   id: string;
   name: string;
   unit: string;
   category: string;
+  dollarValue?: number;
 }
 
 interface DestructionLog {
@@ -93,7 +94,8 @@ export default function Home() {
           id: String(item.productId || item.id || ""),
           name: String(item.description || item.name || ""),
           unit: String(item.uom || item.unit || ""),
-          category: String(item.category || "")
+          category: String(item.category || ""),
+          dollarValue: Number(item.dollarValue || 0)
         }));
         setInventoryItems(items);
         console.log("Loaded " + items.length + " inventory items from API");
@@ -201,6 +203,8 @@ export default function Home() {
       };
 
       setDestructionLogs([...destructionLogs, newLog]);
+      // Refresh inventory to get updated prices
+      fetchInventoryItems();
       setShowSuccess(true);
       setSelectedInventory(null);
       setQuantityInput("");
@@ -371,6 +375,22 @@ export default function Home() {
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Unit: {selectedInventory.unit}
                     </label>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-md border border-red-200">
+                    <p className="text-sm text-slate-600">Unit Price:</p>
+                    <p className="text-2xl font-bold text-red-600">${(selectedInventory.dollarValue || 0).toFixed(2)}</p>
+                    {quantityInput && (
+                      <div className="mt-2 pt-2 border-t border-red-200">
+                        <p className="text-sm text-slate-600">Total Value:</p>
+                        <p className="text-xl font-bold text-red-700">${(parseFloat(quantityInput) * (selectedInventory.dollarValue || 0)).toFixed(2)}</p>
+                        {(parseFloat(quantityInput) * (selectedInventory.dollarValue || 0)) > 30 && (
+                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                            ⚠️ Supervisor approval required (Total exceeds $30)
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
