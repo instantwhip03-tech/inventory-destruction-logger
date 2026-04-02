@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, QrCode, Trash2, Clock, CheckCircle, Loader2 } from "lucide-react";
 
-// Google Apps Script deployment URL
-const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz862mUtIjcQoIskNFFxsKyiqAJTN-M6oIXZ1CaQfh7y0cXzD5h7jAZi3SvWWDfJrXN/exec";
+// Google Sheets Visualization API URL for Product Inventory sheet
+const SPREADSHEET_ID = "1a3blj44GREZyPm9hnTxuOkzL5hJj3at2a6gHBEERdok";
+const SHEET_GID = "1831754412";
+const GOOGLE_VIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 
 interface InventoryItem {
   id: string;
@@ -72,36 +74,57 @@ export default function Home() {
     try {
       setIsLoadingInventory(true);
       
-      // Create a timeout promise that rejects after 5 seconds
+      // Create a timeout promise that rejects after 10 seconds
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('API timeout')), 5000)
+        setTimeout(() => reject(new Error('API timeout')), 10000)
       );
       
-      // Race between the fetch and timeout
-      const fetchPromise = fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getInventory");
+      // Fetch from Google Visualization API
+      const fetchPromise = fetch(GOOGLE_VIZ_URL);
       const response = await Promise.race([fetchPromise, timeoutPromise]);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch inventory: ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log("API Response:", data);
+      const text = await response.text();
+      console.log("Raw response:", text.substring(0, 200));
       
-      if (data.status === "success" && data.items && data.items.length > 0) {
-        // Convert the items from the API response
-        const items: InventoryItem[] = data.items.map((item: any) => ({
-          id: String(item.productId || item.id || ""),
-          name: String(item.description || item.name || ""),
-          unit: String(item.uom || item.unit || ""),
-          category: String(item.category || ""),
-          dollarValue: Number(item.dollarValue || 0)
-        }));
-        setInventoryItems(items);
-        console.log("Loaded " + items.length + " inventory items from API");
-      } else {
-        throw new Error(data.message || "No inventory items found in Google Sheet.");
+      // Parse Google Visualization API response
+      // Response format: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("Could not parse Google Sheets response");
       }
+      
+      const data = JSON.parse(jsonMatch[0]);
+      console.log("Parsed data:", data);
+      
+      const cols = data.table?.cols || [];
+      const rows = data.table?.rows || [];
+      
+      if (rows.length === 0) {
+        throw new Error("No inventory items found in Google Sheet");
+      }
+      
+      // Convert rows to items
+      // Column structure: [Product ID, Description, UOM, Category, dollar value]
+      const items: InventoryItem[] = rows
+        .map((row: any) => {
+          const cells = row.c || [];
+          return {
+            id: String(cells[0]?.v || ""),
+            name: String(cells[1]?.v || ""),
+            unit: String(cells[2]?.v || ""),
+            category: String(cells[3]?.v || ""),
+            dollarValue: Number(cells[4]?.v || 0)
+          };
+        })
+        .filter((item: InventoryItem) => item.id && item.id.trim() !== "");
+      
+      setInventoryItems(items);
+      console.log("Loaded " + items.length + " inventory items from Google Sheets");
+      console.log("First item:", items[0]);
     } catch (error) {
       console.error("Error fetching inventory:", error);
       // Use fallback test data
@@ -110,7 +133,7 @@ export default function Home() {
     } finally {
       setIsLoadingInventory(false);
     }
-  };
+  }
 
   // Initialize camera for QR code scanning
   const startCamera = async () => {
