@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, QrCode, Trash2, Clock, CheckCircle, Loader2, Search } from "lucide-react";
 
 // Google Apps Script deployment URL
-const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz862mUtIjcQoIskNFFxsKyiqAJTN-M6oIXZ1CaQfh7y0cXzD5h7jAZi3SvWWDfJrXN/exec";
+const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJQgz9cSiEszPrys-EyMX8offgJDk18tDNeorwjbDGhdViirn8jo_sXJnztwED6eaT/exec";
 
 interface InventoryItem {
   id: string;
