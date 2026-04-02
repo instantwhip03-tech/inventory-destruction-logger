@@ -4,17 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, QrCode, Trash2, Clock, CheckCircle, Loader2, Search } from "lucide-react";
+import { AlertCircle, QrCode, Trash2, Clock, CheckCircle, Loader2 } from "lucide-react";
 
 // Google Apps Script deployment URL
-const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJQgz9cSiEszPrys-EyMX8offgJDk18tDNeorwjbDGhdViirn8jo_sXJnztwED6eaT/exec";
+const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8ydmlnboa55kPP6ovp4Q_kIa2M7F1uYA8BG_JUng/dev";
 
 interface InventoryItem {
   id: string;
   name: string;
   unit: string;
   category: string;
-  price?: number;
 }
 
 interface DestructionLog {
@@ -30,9 +29,7 @@ interface DestructionLog {
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("browse");
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("scanner");
   const [scannedQRCode, setScannedQRCode] = useState("");
   const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null);
   const [quantityInput, setQuantityInput] = useState("");
@@ -47,15 +44,14 @@ export default function Home() {
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
-  const [supervisorApproved, setSupervisorApproved] = useState(false);
 
   // Fallback test data
   const testData: InventoryItem[] = [
-    { id: "INV-001", name: "Vanilla Ice Cream", unit: "Liter", category: "United", price: 5.99 },
-    { id: "INV-002", name: "Chocolate Ice Cream", unit: "Liter", category: "Maola", price: 6.99 },
-    { id: "INV-003", name: "Strawberry Ice Cream", unit: "Liter", category: "Other", price: 5.99 },
-    { id: "INV-004", name: "Mint Chip Ice Cream", unit: "Liter", category: "United", price: 7.99 },
-    { id: "INV-005", name: "Cookie Dough Ice Cream", unit: "Liter", category: "Maola", price: 8.99 }
+    { id: "INV-001", name: "Vanilla Ice Cream", unit: "Liter", category: "United" },
+    { id: "INV-002", name: "Chocolate Ice Cream", unit: "Liter", category: "Maola" },
+    { id: "INV-003", name: "Strawberry Ice Cream", unit: "Liter", category: "Other" },
+    { id: "INV-004", name: "Mint Chip Ice Cream", unit: "Liter", category: "United" },
+    { id: "INV-005", name: "Cookie Dough Ice Cream", unit: "Liter", category: "Maola" }
   ];
 
   // Fetch inventory items from Google Sheet on component mount and set up auto-refresh
@@ -71,111 +67,47 @@ export default function Home() {
     return () => clearInterval(refreshInterval);
   }, []);
 
-  // Scroll to top when category changes
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeCategory]);
-
   const fetchInventoryItems = async () => {
     try {
       setIsLoadingInventory(true);
-      console.log("Starting inventory fetch from:", GOOGLE_APPS_SCRIPT_URL);
       
-      // Create a timeout promise that rejects after 10 seconds
+      // Create a timeout promise that rejects after 5 seconds
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('API timeout after 10 seconds')), 10000)
+        setTimeout(() => reject(new Error('API timeout')), 5000)
       );
       
       // Race between the fetch and timeout
-      const fetchPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'getInventory' })
-      });
-      
-      console.log("Fetch promise created, waiting for response...");
+      const fetchPromise = fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getInventory");
       const response = await Promise.race([fetchPromise, timeoutPromise]);
       
-      console.log("Response received:", response.status, response.statusText);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Response not OK. Status:", response.status, "Text:", errorText);
         throw new Error(`Failed to fetch inventory: ${response.statusText}`);
       }
       
-      const responseText = await response.text();
-      console.log("Raw response text:", responseText);
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Failed to parse JSON response:", parseError);
-        throw new Error("Invalid JSON response from API");
-      }
-      
-      console.log("Parsed API Response:", data);
+      const data = await response.json();
+      console.log("API Response:", data);
       
       if (data.status === "success" && data.items && data.items.length > 0) {
         // Convert the items from the API response
-        const items: InventoryItem[] = data.items.map((item: any) => {
-          console.log("Item from API:", item);
-          // Parse price - check for undefined/null, not just falsy (0 is valid)
-          let price = 0;
-          if (item.dollarValue !== undefined && item.dollarValue !== null) {
-            price = parseFloat(item.dollarValue);
-            if (isNaN(price)) {
-              price = 0;
-            }
-          }
-          return {
-            id: String(item.productId || item.id || ""),
-            name: String(item.description || item.name || ""),
-            unit: String(item.uom || item.unit || ""),
-            category: String(item.category || ""),
-            price: price
-          };
-        });
-        console.log("Mapped items:", items);
+        const items: InventoryItem[] = data.items.map((item: any) => ({
+          id: String(item.productId || item.id || ""),
+          name: String(item.description || item.name || ""),
+          unit: String(item.uom || item.unit || ""),
+          category: String(item.category || "")
+        }));
         setInventoryItems(items);
-        console.log("SUCCESS: Loaded " + items.length + " inventory items from API");
+        console.log("Loaded " + items.length + " inventory items from API");
       } else {
-        console.error("API response missing items or status not success:", data);
         throw new Error(data.message || "No inventory items found in Google Sheet.");
       }
     } catch (error) {
       console.error("Error fetching inventory:", error);
-      console.error("Error details:", error instanceof Error ? error.message : String(error));
       // Use fallback test data
       setInventoryItems(testData);
       console.log("Using fallback test data - API may be unavailable");
     } finally {
       setIsLoadingInventory(false);
     }
-  };
-
-  // Get unique categories from inventory items
-  const getCategories = () => {
-    const categories = new Set(inventoryItems.map(item => item.category).filter(Boolean));
-    return Array.from(categories).sort();
-  };
-
-  // Filter inventory items by category and search query
-  const getFilteredItems = () => {
-    let filtered = inventoryItems;
-    
-    if (activeCategory !== "all") {
-      filtered = filtered.filter(item => item.category === activeCategory);
-    }
-    
-    if (searchQuery) {
-      filtered = filtered.filter(item => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.id.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    return filtered;
   };
 
   // Initialize camera for QR code scanning
@@ -217,14 +149,6 @@ export default function Home() {
     }
   };
 
-  // Select item from browse list
-  const handleSelectItem = (item: InventoryItem) => {
-    setSelectedInventory(item);
-    setScannedQRCode(item.id);
-    setQuantityInput("");
-    setActiveTab("log");
-  };
-
   // Submit destruction log to Google Sheet
   const handleSubmitDestruction = async () => {
     if (!selectedInventory || !quantityInput || !employeeName) {
@@ -253,15 +177,14 @@ export default function Home() {
       // Send to Google Apps Script
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: "POST",
-        mode: 'no-cors',
         body: JSON.stringify(logData),
         headers: {
           'Content-Type': 'application/json'
         }
       });
 
-      // With no-cors mode, we can't read the response, so just treat successful fetch as success
-      console.log("Submission sent to Google Apps Script", response);
+      const result = await response.json();
+      console.log("Submission result:", result);
 
       // Create local log entry
       const timestamp = new Date().toLocaleString();
@@ -274,36 +197,19 @@ export default function Home() {
         timestamp,
         employeeName,
         reason: reasonInput,
-        googleSheetStatus: "success",
+        googleSheetStatus: result.status === "success" ? "success" : "error",
       };
 
       setDestructionLogs([...destructionLogs, newLog]);
       setShowSuccess(true);
-      
-      // Switch to browse tab FIRST (before clearing selectedInventory)
-      setActiveTab("browse");
-      
-      // Then reset state to return to main page
       setSelectedInventory(null);
       setQuantityInput("");
       setScannedQRCode("");
       setReasonInput("DAMAGED");
-      setSupervisorApproved(false); // Reset supervisor approval
-      setActiveCategory("all"); // Reset to show all categories
-      
-      // Scroll to top
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
-      
-      // Hide success message after 3 seconds
+
       setTimeout(() => setShowSuccess(false), 3000);
-      
-      console.log("Submission complete - should be on browse tab now");
     } catch (error) {
       console.error("Error submitting to Google Sheet:", error);
-      console.log("Current activeTab:", activeTab);
-      console.log("Current selectedInventory:", selectedInventory);
       setErrorMessage("Error saving to Google Sheet. Please try again.");
       setShowError(true);
       setTimeout(() => setShowError(false), 3000);
@@ -311,9 +217,6 @@ export default function Home() {
       setIsSubmitting(false);
     }
   };
-
-  const categories = getCategories();
-  const filteredItems = getFilteredItems();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-red-100">
@@ -326,161 +229,112 @@ export default function Home() {
             </div>
             <h1 className="text-3xl font-bold text-slate-900">Inventory Dump Log</h1>
           </div>
-          <p className="text-slate-600">Scan QR codes or browse items and log inventory dumps to Google Sheets</p>
+          <p className="text-slate-600">Scan QR codes and log inventory dumps to Google Sheets with automatic timestamps</p>
         </div>
       </header>
-
-      {/* Success/Error Messages */}
-      {showSuccess && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 z-40">
-          <CheckCircle className="w-5 h-5" />
-          Destruction logged successfully!
-        </div>
-      )}
-
-      {showError && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 z-40">
-          <AlertCircle className="w-5 h-5" />
-          {errorMessage}
-        </div>
-      )}
 
       {/* Main Content */}
       <main className="container py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="browse">Browse Items</TabsTrigger>
+            <TabsTrigger value="scanner">QR Scanner</TabsTrigger>
             <TabsTrigger value="log" disabled={!selectedInventory}>
               Log Dump
             </TabsTrigger>
             <TabsTrigger value="history">Dump History</TabsTrigger>
           </TabsList>
 
-          {/* Browse Items Tab */}
-          <TabsContent value="browse" className="space-y-6">
-            {/* Search Bar */}
+          {/* QR Scanner Tab */}
+          <TabsContent value="scanner" className="space-y-6">
             <Card className="border-red-200 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Search className="w-5 h-5 text-red-600" />
-                  Search Items
+                  <QrCode className="w-5 h-5 text-red-600" />
+                  Scan QR Code
                 </CardTitle>
+                <CardDescription>Point your device camera at the QR code on the inventory item</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Input
-                  placeholder="Search by product name or ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full"
-                />
+              <CardContent className="space-y-4">
+                {!cameraActive ? (
+                  <Button onClick={startCamera} className="w-full bg-red-600 hover:bg-red-700">
+                    Start Camera
+                  </Button>
+                ) : (
+                  <>
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full rounded-lg border-2 border-red-300"
+                    />
+                    <Button onClick={stopCamera} variant="outline" className="w-full">
+                      Stop Camera
+                    </Button>
+                  </>
+                )}
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-slate-500">Or manually enter Product ID (Demo):</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g., INV-001"
+                    value={scannedQRCode}
+                    onChange={(e) => setScannedQRCode(e.target.value)}
+                    className="border-red-200"
+                  />
+                  <Button
+                    onClick={() => simulateQRScan(scannedQRCode)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Scan
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Category Tabs - Hide when specific category is selected */}
-            {categories.length > 0 && activeCategory === "all" && (
-              <Card className="border-red-200 shadow-md">
-                <CardHeader>
-                  <CardTitle>Categories</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
-                    <button
-                      onClick={() => setActiveCategory("all")}
-                      className={`aspect-square flex flex-col items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition-all p-1 ${
-                        activeCategory === "all"
-                          ? "bg-red-600 text-white shadow-md"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      }`}
-                    >
-                      <span className="text-base sm:text-lg">All</span>
-                      <span className="text-[10px] sm:text-xs mt-0.5">({inventoryItems.length})</span>
-                    </button>
-                    {categories.map((category) => {
-                      const count = inventoryItems.filter(item => item.category === category).length;
-                      return (
-                        <button
-                          key={category}
-                          onClick={() => setActiveCategory(category)}
-                          className={`aspect-square flex flex-col items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition-all p-1 ${
-                            activeCategory === category
-                              ? "bg-red-600 text-white shadow-md"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
-                        >
-                          <span className="text-base sm:text-lg line-clamp-1">{category}</span>
-                          <span className="text-[10px] sm:text-xs mt-0.5">({count})</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Clear Filter Button - Show when category is selected */}
-            {activeCategory !== "all" && (
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-900">{activeCategory} Items</h3>
-                <Button
-                  onClick={() => setActiveCategory("all")}
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  Clear Filter
-                </Button>
-              </div>
-            )}
-
-            {/* Inventory Items List */}
+            {/* Available Inventory Items */}
             <Card className="border-red-200 shadow-md">
               <CardHeader>
-                <CardTitle>
-                  {activeCategory === "all" ? "All Items" : `${activeCategory} Items`}
-                </CardTitle>
+                <CardTitle>Available Inventory Items</CardTitle>
                 <CardDescription>
-                  {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} found
+                  {isLoadingInventory ? "Loading from Google Sheet..." : `${inventoryItems.length} items available`}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingInventory ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 text-red-600 animate-spin" />
-                    <span className="ml-2 text-slate-600">Loading inventory...</span>
+                    <Loader2 className="w-6 h-6 animate-spin text-red-600 mr-2" />
+                    <span>Loading inventory...</span>
                   </div>
-                ) : filteredItems.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
-                    No items found. Try adjusting your search or category.
+                ) : inventoryItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <AlertCircle className="w-12 h-12 text-red-400 mb-3" />
+                    <p className="text-slate-600">No inventory items found. Please contact your administrator.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredItems.map((item) => (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {inventoryItems.map((item) => (
                       <div
                         key={item.id}
-                        className="p-4 border border-red-200 rounded-lg hover:bg-red-50 cursor-pointer transition-colors"
-                        onClick={() => handleSelectItem(item)}
+                        onClick={() => simulateQRScan(item.id)}
+                        className="p-3 border border-red-200 rounded-lg hover:bg-red-50 cursor-pointer transition-colors"
                       >
-                        <div className="flex justify-between items-start mb-2">
+                        <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <p className="font-semibold text-slate-900">{item.name}</p>
                             <p className="text-sm text-slate-600">ID: {item.id}</p>
                           </div>
-                          <Badge className="bg-red-100 text-red-800">{item.category}</Badge>
+                          <Badge variant="outline" className="ml-2">
+                            {item.unit}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-slate-500">Unit: {item.unit}</p>
-                        {item.price !== undefined && item.price > 0 && (
-                          <p className="text-sm text-green-600 font-semibold">Price: ${item.price.toFixed(2)}</p>
-                        )}
-                        <Button
-                          size="sm"
-                          className="mt-3 w-full bg-red-600 hover:bg-red-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectItem(item);
-                          }}
-                        >
-                          Select Item
-                        </Button>
                       </div>
                     ))}
                   </div>
@@ -492,129 +346,81 @@ export default function Home() {
           {/* Log Dump Tab */}
           <TabsContent value="log" className="space-y-6">
             {selectedInventory && (
-              <>
-                <Card className="border-red-200 shadow-md bg-red-50">
-                  <CardHeader>
-                    <CardTitle>Selected Item</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p><strong>Product ID:</strong> {selectedInventory.id}</p>
-                      <p><strong>Name:</strong> {selectedInventory.name}</p>
-                      <p><strong>Unit:</strong> {selectedInventory.unit}</p>
-                      <p><strong>Category:</strong> <Badge>{selectedInventory.category}</Badge></p>
-                      {selectedInventory.price !== undefined && (
-                        <p><strong>Unit Price:</strong> ${selectedInventory.price.toFixed(2)}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+              <Card className="border-red-200 shadow-md bg-red-50/50">
+                <CardHeader>
+                  <CardTitle className="text-red-900">Log Destruction</CardTitle>
+                  <CardDescription>
+                    Selected: <span className="font-semibold">{selectedInventory.name}</span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Quantity to Destroy
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Enter quantity"
+                      value={quantityInput}
+                      onChange={(e) => setQuantityInput(e.target.value)}
+                      className="border-red-200"
+                    />
+                  </div>
 
-                <Card className="border-red-200 shadow-md">
-                  <CardHeader>
-                    <CardTitle>Log Destruction</CardTitle>
-                    <CardDescription>Enter the details of the inventory destruction</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Quantity to Destroy
-                      </label>
-                      <Input
-                        type="number"
-                        placeholder="Enter quantity"
-                        value={quantityInput}
-                        onChange={(e) => setQuantityInput(e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Unit: {selectedInventory.unit}
+                    </label>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Employee Name
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="Enter your name"
-                        value={employeeName}
-                        onChange={(e) => setEmployeeName(e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Employee Name
+                    </label>
+                    <Input
+                      placeholder="Enter your name"
+                      value={employeeName}
+                      onChange={(e) => setEmployeeName(e.target.value)}
+                      className="border-red-200"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Reason for Destruction
-                      </label>
-                      <select
-                        value={reasonInput}
-                        onChange={(e) => setReasonInput(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                      >
-                        <option>DAMAGED</option>
-                        <option>EXPIRED</option>
-                        <option>RECALL</option>
-                        <option>QUALITY_ISSUE</option>
-                        <option>OTHER</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Reason for Destruction
+                    </label>
+                    <select
+                      value={reasonInput}
+                      onChange={(e) => setReasonInput(e.target.value)}
+                      className="w-full px-3 py-2 border border-red-200 rounded-md"
+                    >
+                      <option value="DAMAGED">Damaged</option>
+                      <option value="EXPIRED">Expired</option>
+                      <option value="RECALL">Recall</option>
+                      <option value="WASTE">Waste</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
 
-                    {/* Total Value Display */}
-                    {selectedInventory.price && quantityInput && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm text-slate-600">
-                          Total Value: <strong className="text-blue-600">${(parseFloat(quantityInput) * selectedInventory.price).toFixed(2)}</strong>
-                        </p>
-                      </div>
+                  <Button
+                    onClick={handleSubmitDestruction}
+                    disabled={isSubmitting}
+                    className="w-full bg-red-600 hover:bg-red-700"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Submit to Google Sheet
+                      </>
                     )}
-
-                    {/* Supervisor Approval for items over $30 */}
-                    {selectedInventory.price && quantityInput && (parseFloat(quantityInput) * selectedInventory.price) > 30 && (
-                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg space-y-3">
-                        <p className="text-sm text-red-600 font-semibold">⚠️ Value exceeds $30 - Supervisor approval required</p>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={supervisorApproved}
-                            onChange={(e) => setSupervisorApproved(e.target.checked)}
-                            className="w-4 h-4 text-yellow-600 rounded"
-                          />
-                          <span className="text-sm text-slate-700">I have supervisor approval for this destruction</span>
-                        </label>
-                      </div>
-                    )}
-
-                    <div className="flex gap-3 pt-4">
-                      <Button
-                        onClick={handleSubmitDestruction}
-                        disabled={isSubmitting || (selectedInventory.price && quantityInput && (parseFloat(quantityInput) * selectedInventory.price) > 30 && !supervisorApproved)}
-                        className="flex-1 bg-red-600 hover:bg-red-700"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          "Submit to Google Sheet"
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedInventory(null);
-                          setQuantityInput("");
-                          setScannedQRCode("");
-                          setSupervisorApproved(false);
-                          setActiveTab("browse");
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
+                  </Button>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
@@ -627,41 +433,34 @@ export default function Home() {
                   Destruction History
                 </CardTitle>
                 <CardDescription>
-                  {destructionLogs.length} destruction{destructionLogs.length !== 1 ? "s" : ""} logged
+                  {destructionLogs.length} destruction entries logged
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {destructionLogs.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
-                    No destructions logged yet.
-                  </div>
+                  <p className="text-slate-600 text-center py-8">No destruction logs yet</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
                     {destructionLogs.map((log) => (
                       <div
                         key={log.id}
-                        className="p-4 border border-red-200 rounded-lg"
+                        className="p-3 border border-red-200 rounded-lg bg-red-50/50"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <p className="font-semibold text-slate-900">{log.inventoryName}</p>
-                            <p className="text-sm text-slate-600">ID: {log.inventoryId}</p>
+                            <p className="text-sm text-slate-600">{log.timestamp}</p>
                           </div>
                           <Badge
-                            className={
-                              log.googleSheetStatus === "success"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }
+                            variant={log.googleSheetStatus === "success" ? "default" : "destructive"}
                           >
-                            {log.googleSheetStatus === "success" ? "Saved" : "Error"}
+                            {log.googleSheetStatus === "success" ? "✓ Saved" : "✗ Error"}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm text-slate-600 mb-2">
-                          <p><strong>Quantity:</strong> {log.quantity} {log.unit}</p>
-                          <p><strong>Employee:</strong> {log.employeeName}</p>
-                          <p><strong>Reason:</strong> {log.reason}</p>
-                          <p><strong>Time:</strong> {log.timestamp}</p>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
+                          <div>Quantity: {log.quantity} {log.unit}</div>
+                          <div>Employee: {log.employeeName}</div>
+                          <div>Reason: {log.reason}</div>
                         </div>
                       </div>
                     ))}
@@ -671,60 +470,23 @@ export default function Home() {
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* QR Scanner Section - Moved to Bottom */}
-        <div className="mt-12">
-          <Card className="border-red-200 shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-red-600" />
-                QR Code Scanner
-              </CardTitle>
-              <CardDescription>Alternatively, scan a QR code to quickly select an item</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!cameraActive ? (
-                <Button onClick={startCamera} className="w-full bg-red-600 hover:bg-red-700">
-                  Start Camera
-                </Button>
-              ) : (
-                <>
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full rounded-lg border-2 border-red-300"
-                  />
-                  <Button onClick={stopCamera} variant="outline" className="w-full">
-                    Stop Camera
-                  </Button>
-                </>
-              )}
-
-              <div className="border-t border-red-200 pt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Or manually enter Product ID:
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    placeholder="Enter Product ID"
-                    value={scannedQRCode}
-                    onChange={(e) => setScannedQRCode(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={() => simulateQRScan(scannedQRCode)}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Search
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </main>
+
+      {/* Success Toast */}
+      {showSuccess && (
+        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+          <CheckCircle className="w-5 h-5" />
+          Destruction logged successfully!
+        </div>
+      )}
+
+      {/* Error Toast */}
+      {showError && (
+        <div className="fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 max-w-sm">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
