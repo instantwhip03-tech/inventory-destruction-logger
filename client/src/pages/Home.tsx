@@ -45,6 +45,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
 
@@ -121,8 +122,7 @@ export default function Home() {
           };
         })
         .filter((item: InventoryItem) => item.id && item.id.trim() !== "");
-      
-      setInventoryItems(items);
+            setInventoryItems(items);
       console.log("Loaded " + items.length + " inventory items from Google Sheets");
       console.log("First item:", items[0]);
     } catch (error) {
@@ -133,7 +133,20 @@ export default function Home() {
     } finally {
       setIsLoadingInventory(false);
     }
-  }
+  };
+
+  // Get unique categories from inventory items
+  const categories = Array.from(new Set(inventoryItems.map(item => item.category).filter(Boolean))).sort();
+
+  // Filter items based on selected category
+  const filteredItems = selectedCategory 
+    ? inventoryItems.filter(item => item.category === selectedCategory)
+    : inventoryItems;
+
+  // Handle category selection
+  const handleCategorySelect = (category: string | null) => {
+    setSelectedCategory(category);
+  };
 
   // Initialize camera for QR code scanning
   const startCamera = async () => {
@@ -346,8 +359,36 @@ export default function Home() {
                     <p className="text-slate-600">No inventory items found. Please contact your administrator.</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {inventoryItems.map((item) => (
+                  <div className="space-y-4">
+                    {/* Category Filter Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={() => handleCategorySelect(null)}
+                        variant={selectedCategory === null ? "default" : "outline"}
+                        size="sm"
+                        className={selectedCategory === null ? "bg-red-600 hover:bg-red-700" : ""}
+                      >
+                        All ({inventoryItems.length})
+                      </Button>
+                      {categories.map((category) => {
+                        const count = inventoryItems.filter(item => item.category === category).length;
+                        return (
+                          <Button
+                            key={category}
+                            onClick={() => handleCategorySelect(category)}
+                            variant={selectedCategory === category ? "default" : "outline"}
+                            size="sm"
+                            className={selectedCategory === category ? "bg-red-600 hover:bg-red-700" : ""}
+                          >
+                            {category} ({count})
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Inventory List */}
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {filteredItems.map((item) => (
                       <div
                         key={item.id}
                         onClick={() => simulateQRScan(item.id)}
