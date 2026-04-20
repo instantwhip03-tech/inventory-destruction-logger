@@ -318,59 +318,6 @@ export default function Home() {
 
           {/* QR Scanner Tab */}
           <TabsContent value="scanner" className="space-y-6">
-            <Card className="border-red-200 shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <QrCode className="w-5 h-5 text-red-600" />
-                  Scan QR Code
-                </CardTitle>
-                <CardDescription>Point your device camera at the QR code on the inventory item</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!cameraActive ? (
-                  <Button onClick={startCamera} className="w-full bg-red-600 hover:bg-red-700">
-                    Start Camera
-                  </Button>
-                ) : (
-                  <>
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full rounded-lg border-2 border-red-300"
-                    />
-                    <Button onClick={stopCamera} variant="outline" className="w-full">
-                      Stop Camera
-                    </Button>
-                  </>
-                )}
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-slate-500">Or manually enter Product ID (Demo):</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="e.g., INV-001"
-                    value={scannedQRCode}
-                    onChange={(e) => setScannedQRCode(e.target.value)}
-                    className="border-red-200"
-                  />
-                  <Button
-                    onClick={() => simulateQRScan(scannedQRCode)}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Scan
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Available Inventory Items */}
             <Card className="border-red-200 shadow-md">
               <CardHeader>
