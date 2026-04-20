@@ -46,6 +46,7 @@ export default function Home() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
 
@@ -138,10 +139,14 @@ export default function Home() {
   // Get unique categories from inventory items
   const categories = Array.from(new Set(inventoryItems.map(item => item.category).filter(Boolean))).sort();
 
-  // Filter items based on selected category
-  const filteredItems = selectedCategory 
-    ? inventoryItems.filter(item => item.category === selectedCategory)
-    : inventoryItems;
+  // Filter items based on selected category and search query
+  const filteredItems = inventoryItems.filter(item => {
+    const matchesCategory = !selectedCategory || item.category === selectedCategory;
+    const matchesSearch = !searchQuery || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.id.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   // Handle category selection
   const handleCategorySelect = (category: string | null) => {
@@ -326,7 +331,15 @@ export default function Home() {
                   {isLoadingInventory ? "Loading from Google Sheet..." : `${inventoryItems.length} items available`}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Search Bar */}
+                <Input
+                  placeholder="Search by product name or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="border-red-200"
+                />
+
                 {isLoadingInventory ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-red-600 mr-2" />
