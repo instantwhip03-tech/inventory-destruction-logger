@@ -273,6 +273,38 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Category Filter Header */}
+      {!isLoadingInventory && inventoryItems.length > 0 && (
+        <div className="border-b border-red-100 bg-white sticky top-[88px] z-40">
+          <div className="container py-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => handleCategorySelect(null)}
+                variant={selectedCategory === null ? "default" : "outline"}
+                size="sm"
+                className={selectedCategory === null ? "bg-red-600 hover:bg-red-700" : ""}
+              >
+                All ({inventoryItems.length})
+              </Button>
+              {categories.map((category) => {
+                const count = inventoryItems.filter(item => item.category === category).length;
+                return (
+                  <Button
+                    key={category}
+                    onClick={() => handleCategorySelect(category)}
+                    variant={selectedCategory === category ? "default" : "outline"}
+                    size="sm"
+                    className={selectedCategory === category ? "bg-red-600 hover:bg-red-700" : ""}
+                  >
+                    {category} ({count})
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="container py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -359,36 +391,8 @@ export default function Home() {
                     <p className="text-slate-600">No inventory items found. Please contact your administrator.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {/* Category Filter Buttons */}
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        onClick={() => handleCategorySelect(null)}
-                        variant={selectedCategory === null ? "default" : "outline"}
-                        size="sm"
-                        className={selectedCategory === null ? "bg-red-600 hover:bg-red-700" : ""}
-                      >
-                        All ({inventoryItems.length})
-                      </Button>
-                      {categories.map((category) => {
-                        const count = inventoryItems.filter(item => item.category === category).length;
-                        return (
-                          <Button
-                            key={category}
-                            onClick={() => handleCategorySelect(category)}
-                            variant={selectedCategory === category ? "default" : "outline"}
-                            size="sm"
-                            className={selectedCategory === category ? "bg-red-600 hover:bg-red-700" : ""}
-                          >
-                            {category} ({count})
-                          </Button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Inventory List */}
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {filteredItems.map((item) => (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {filteredItems.map((item) => (
                       <div
                         key={item.id}
                         onClick={() => simulateQRScan(item.id)}
