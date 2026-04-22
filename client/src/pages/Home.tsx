@@ -10,6 +10,7 @@ import { AlertCircle, QrCode, Trash2, Clock, CheckCircle, Loader2 } from "lucide
 const SPREADSHEET_ID = "1a3blj44GREZyPm9hnTxuOkzL5hJj3at2a6gHBEERdok";
 const SHEET_GID = "1831754412";
 const GOOGLE_VIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
+const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPOVLjQF2wZ1rIR6lPHMZB43TRxpOvw0-xFF_KPte5Ua7KEDTssdPUZKF9JnpFUOxC/exec";
 
 interface InventoryItem {
   id: string;
@@ -218,16 +219,20 @@ export default function Home() {
       };
 
       // Send to Google Apps Script
-      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify(logData),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      try {
+        const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify(logData),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
 
-      const result = await response.json();
-      console.log("Submission result:", result);
+        const result = await response.json();
+        console.log("Submission result:", result);
+      } catch (fetchError) {
+        console.error("Error sending to Google Apps Script:", fetchError);
+      }
 
       // Create local log entry
       const timestamp = new Date().toLocaleString();
@@ -282,14 +287,15 @@ export default function Home() {
       {!isLoadingInventory && inventoryItems.length > 0 && (
         <div className="border-b border-red-100 bg-white sticky top-[88px] z-40">
           <div className="container py-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
               <Button
                 onClick={() => handleCategorySelect(null)}
                 variant={selectedCategory === null ? "default" : "outline"}
                 size="sm"
-                className={selectedCategory === null ? "bg-red-600 hover:bg-red-700" : ""}
+                className={`w-full h-auto min-h-[80px] sm:min-h-[100px] md:min-h-[120px] flex flex-col items-center justify-center p-2 ${selectedCategory === null ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
               >
-                All ({inventoryItems.length})
+                <span className="text-sm sm:text-base font-semibold text-center line-clamp-2">All</span>
+                <span className="text-xs sm:text-sm text-center">({inventoryItems.length})</span>
               </Button>
               {categories.map((category) => {
                 const count = inventoryItems.filter(item => item.category === category).length;
@@ -299,9 +305,10 @@ export default function Home() {
                     onClick={() => handleCategorySelect(category)}
                     variant={selectedCategory === category ? "default" : "outline"}
                     size="sm"
-                    className={selectedCategory === category ? "bg-red-600 hover:bg-red-700" : ""}
+                    className={`w-full h-auto min-h-[80px] sm:min-h-[100px] md:min-h-[120px] flex flex-col items-center justify-center p-2 ${selectedCategory === category ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
                   >
-                    {category} ({count})
+                    <span className="text-sm sm:text-base font-semibold text-center line-clamp-1">{category}</span>
+                    <span className="text-xs sm:text-sm text-center">({count})</span>
                   </Button>
                 );
               })}
