@@ -285,7 +285,7 @@ export default function Home() {
 
       {/* Category Filter Header */}
       {inventoryItems.length > 0 && (
-        <div className="border-b border-red-100 bg-white/50 backdrop-blur-sm sticky top-[88px] z-10">
+        <div className="border-b border-red-100 bg-gradient-to-br from-red-50 via-orange-50 to-red-100 sticky top-[88px] z-10">
           <div className="container py-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
               <Button
