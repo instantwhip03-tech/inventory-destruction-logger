@@ -153,6 +153,10 @@ export default function Home() {
   // Handle category selection
   const handleCategorySelect = (category: string | null) => {
     setSelectedCategory(category);
+    // Auto-collapse categories when one is selected
+    if (category !== null) {
+      setCategoriesCollapsed(true);
+    }
   };
 
   // Initialize camera for QR code scanning
