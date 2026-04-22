@@ -285,7 +285,7 @@ export default function Home() {
 
       {/* Category Filter Header */}
       {inventoryItems.length > 0 && (
-        <div className="border-b border-red-100 bg-white/50 backdrop-blur-sm sticky top-[88px] z-40">
+        <div className="border-b border-red-100 bg-white/50 backdrop-blur-sm sticky top-[88px] z-10">
           <div className="container py-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
               <Button
@@ -318,7 +318,7 @@ export default function Home() {
       )}
 
       {/* Main Content */}
-      <main className="container py-8">
+      <main className="container py-8 mt-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="scanner">QR Scanner</TabsTrigger>
