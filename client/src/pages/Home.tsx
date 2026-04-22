@@ -329,7 +329,7 @@ export default function Home() {
             )}
           </div>
         </div>
-      ))
+      )}
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto container py-8 mt-4">
