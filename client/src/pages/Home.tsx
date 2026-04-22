@@ -48,6 +48,7 @@ export default function Home() {
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoriesCollapsed, setCategoriesCollapsed] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
 
@@ -287,6 +288,18 @@ export default function Home() {
       {inventoryItems.length > 0 && (
         <div className="border-b border-red-100 bg-gradient-to-br from-red-50 via-orange-50 to-red-100 sticky top-[88px] z-10">
           <div className="container py-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-slate-700">Categories</h3>
+              <Button
+                onClick={() => setCategoriesCollapsed(!categoriesCollapsed)}
+                variant="ghost"
+                size="sm"
+                className="text-slate-600 hover:text-slate-900"
+              >
+                {categoriesCollapsed ? "▼" : "▲"}
+              </Button>
+            </div>
+            {!categoriesCollapsed && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
               <Button
                 onClick={() => handleCategorySelect(null)}
@@ -313,9 +326,10 @@ export default function Home() {
                 );
               })}
             </div>
+            )}
           </div>
         </div>
-      )}
+      ))
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto container py-8 mt-4">
