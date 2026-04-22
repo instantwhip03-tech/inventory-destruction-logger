@@ -124,7 +124,7 @@ export default function Home() {
           };
         })
         .filter((item: InventoryItem) => item.id && item.id.trim() !== "");
-            setInventoryItems(items);
+      setInventoryItems(items);
       console.log("Loaded " + items.length + " inventory items from Google Sheets");
       console.log("First item:", items[0]);
     } catch (error) {
