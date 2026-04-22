@@ -271,7 +271,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-red-100">
       {/* Header */}
-      <header className="border-b border-red-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-red-200 bg-white/40 backdrop-blur-sm sticky top-0 z-50">
         <div className="container py-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center">
@@ -284,8 +284,8 @@ export default function Home() {
       </header>
 
       {/* Category Filter Header */}
-      {!isLoadingInventory && inventoryItems.length > 0 && (
-        <div className="border-b border-red-100 bg-white sticky top-[88px] z-40">
+      {inventoryItems.length > 0 && (
+        <div className="border-b border-red-100 bg-white/50 backdrop-blur-sm sticky top-[88px] z-40">
           <div className="container py-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
               <Button
