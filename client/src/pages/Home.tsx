@@ -269,7 +269,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-red-100">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-red-50 via-orange-50 to-red-100">
       {/* Header */}
       <header className="border-b border-red-200 bg-white/40 backdrop-blur-sm sticky top-0 z-50">
         <div className="container py-6">
@@ -318,7 +318,7 @@ export default function Home() {
       )}
 
       {/* Main Content */}
-      <main className="container py-8 mt-4">
+      <main className="flex-1 overflow-y-auto container py-8 mt-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="scanner">QR Scanner</TabsTrigger>
@@ -529,7 +529,7 @@ export default function Home() {
 
       {/* Success Toast */}
       {showSuccess && (
-        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+        <div className="fixed top-24 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50">
           <CheckCircle className="w-5 h-5" />
           Destruction logged successfully!
         </div>
@@ -537,7 +537,7 @@ export default function Home() {
 
       {/* Error Toast */}
       {showError && (
-        <div className="fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 max-w-sm">
+        <div className="fixed top-24 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 max-w-sm z-50">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span>{errorMessage}</span>
         </div>
