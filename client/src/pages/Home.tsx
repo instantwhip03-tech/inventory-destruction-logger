@@ -331,7 +331,7 @@ export default function Home() {
           {/* QR Scanner Tab */}
           <TabsContent value="scanner" className="space-y-6">
             {/* Available Inventory Items */}
-            <Card className="border-red-200 shadow-md">
+            <Card className="border-red-200 shadow-md pt-4">
               <CardHeader>
                 <CardTitle>Available Inventory Items</CardTitle>
                 <CardDescription>
